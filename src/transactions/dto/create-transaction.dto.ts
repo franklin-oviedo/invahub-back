@@ -1,15 +1,27 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
+
 import {
   IsEnum,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
-  Min,
 } from 'class-validator';
-import { TransactionType } from '../enum/transacitions.enum';
+
+import { Investor } from '../enum/investor.enum';
+import { TransactionType } from '../enum/transaction-type.enum';
 
 export class CreateTransactionDto {
+  @ApiProperty({
+    enum: Investor,
+    example: Investor.OTNIEL_OVIEDO,
+  })
+  @IsEnum(Investor)
+  user_id!: Investor;
+
   @ApiProperty({
     enum: TransactionType,
     example: TransactionType.INVESTMENT,
@@ -25,23 +37,7 @@ export class CreateTransactionDto {
   amount!: number;
 
   @ApiPropertyOptional({
-    example: 0,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  capital?: number;
-
-  @ApiPropertyOptional({
-    example: 0,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  profit?: number;
-
-  @ApiPropertyOptional({
-    example: 'Inversión inicial',
+    example: 'Inversión de septiembre',
   })
   @IsOptional()
   @IsString()
