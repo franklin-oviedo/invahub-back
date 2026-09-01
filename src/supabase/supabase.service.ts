@@ -17,7 +17,7 @@ export class SupabaseService {
 
     const key =
       this.configService.get<string>(
-        'SUPABASE_PUBLISHABLE_KEY',
+        'SUPABASE_SECRET_KEY',
       );
 
     if (!url || !key) {
