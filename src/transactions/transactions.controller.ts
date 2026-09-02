@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UploadedFile,
@@ -15,6 +17,7 @@ import {
   ApiConsumes,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -23,6 +26,7 @@ import {
 
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UploadedFileDto } from './dto/uploaded-file.dto';
+import { VoucherUrlDto } from './dto/voucher-url.dto';
 import { Investor } from './enum/investor.enum';
 import { TransactionsService } from './transactions.service';
 
@@ -181,5 +185,40 @@ export class TransactionsController {
       .findPendingInvestments(
         userId,
       );
+  }
+
+  @Get(':id/voucher')
+  @ApiOperation({
+    summary:
+      'Obtener comprobante de una transacción',
+    description:
+      'Genera una URL temporal para visualizar el comprobante asociado a una transacción.',
+  })
+  @ApiOkResponse({
+    description:
+      'URL temporal del comprobante generada correctamente',
+    type: VoucherUrlDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Movimiento no encontrado o sin comprobante',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Identificador de transacción inválido',
+  })
+  @ApiInternalServerErrorResponse({
+    description:
+      'Error generando la URL del comprobante',
+  })
+  getVoucherUrl(
+    @Param(
+      'id',
+      new ParseUUIDPipe(),
+    )
+    id: string,
+  ): Promise<VoucherUrlDto> {
+    return this.transactionsService
+      .getVoucherUrl(id);
   }
 }

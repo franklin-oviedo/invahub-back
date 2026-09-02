@@ -56,14 +56,13 @@ export class SupabaseService {
     const fileName =
       `${randomUUID()}.${extension}`;
 
-    const filePath =
-      `transactions/${fileName}`;
-
     const { error } =
       await this.client.storage
-        .from(StorageBucket.VOUCHERS)
+        .from(
+          StorageBucket.VOUCHERS,
+        )
         .upload(
-          filePath,
+          fileName,
           file.buffer,
           {
             contentType:
@@ -78,7 +77,63 @@ export class SupabaseService {
       );
     }
 
-    return filePath;
+    return fileName;
+  }
+
+  async findTransactionVoucher(
+    transactionId: string,
+  ) {
+    const {
+      data,
+      error,
+    } =
+      await this.client
+        .from('transactions')
+        .select(
+          'id, voucher_path',
+        )
+        .eq(
+          'id',
+          transactionId,
+        )
+        .single();
+
+    if (
+      error ||
+      !data
+    ) {
+      return null;
+    }
+
+    return data;
+  }
+
+  async createSignedVoucherUrl(
+    path: string,
+  ): Promise<string> {
+    const {
+      data,
+      error,
+    } =
+      await this.client.storage
+        .from(
+          StorageBucket.VOUCHERS,
+        )
+        .createSignedUrl(
+          path,
+          60 * 5,
+        );
+
+    if (
+      error ||
+      !data?.signedUrl
+    ) {
+      throw new InternalServerErrorException(
+        `Error generando URL del comprobante: ${error?.message ?? 'URL no disponible'}`,
+      );
+    }
+
+    return data.signedUrl;
   }
 
   private getFileExtension(
