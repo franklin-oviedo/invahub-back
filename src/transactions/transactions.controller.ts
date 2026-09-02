@@ -1,12 +1,18 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -16,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UploadedFileDto } from './dto/uploaded-file.dto';
 import { Investor } from './enum/investor.enum';
 import { TransactionsService } from './transactions.service';
 
@@ -28,10 +35,58 @@ export class TransactionsController {
   ) {}
 
   @Post()
+  @UseInterceptors(
+    FileInterceptor(
+      'voucher',
+      {
+        limits: {
+          fileSize:
+            5 * 1024 * 1024,
+        },
+        fileFilter: (
+          request,
+          file,
+          callback,
+        ) => {
+          const allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'application/pdf',
+          ];
+
+          if (
+            !allowedMimeTypes.includes(
+              file.mimetype,
+            )
+          ) {
+            return callback(
+              new BadRequestException(
+                'Formato de comprobante no permitido. Solo se aceptan JPG, JPEG, PNG, WEBP y PDF.',
+              ),
+              false,
+            );
+          }
+
+          callback(
+            null,
+            true,
+          );
+        },
+      },
+    ),
+  )
+  @ApiConsumes(
+    'multipart/form-data',
+  )
+  @ApiBody({
+    type: CreateTransactionDto,
+  })
   @ApiOperation({
-    summary: 'Registrar una transacción',
+    summary:
+      'Registrar una transacción',
     description:
-      'Registra una inversión o retorno. En los retornos, el backend calcula automáticamente capital, ganancia y saldo pendiente de la inversión seleccionada.',
+      'Registra una inversión o retorno. Permite adjuntar un comprobante de hasta 5 MB en formato JPG, JPEG, PNG, WEBP o PDF. En los retornos, el backend calcula automáticamente capital, ganancia y saldo pendiente de la inversión seleccionada.',
   })
   @ApiCreatedResponse({
     description:
@@ -39,21 +94,28 @@ export class TransactionsController {
   })
   @ApiBadRequestResponse({
     description:
-      'Datos inválidos, inversión no seleccionada o inversión ya saldada',
+      'Datos inválidos, comprobante no permitido, inversión no seleccionada o inversión ya saldada',
   })
   @ApiInternalServerErrorResponse({
     description:
-      'Error registrando la transacción',
+      'Error registrando la transacción o subiendo el comprobante',
   })
   create(
-    @Body() dto: CreateTransactionDto,
+    @Body()
+    dto: CreateTransactionDto,
+    @UploadedFile()
+    voucher: UploadedFileDto,
   ) {
-    return this.transactionsService.create(dto);
+    return this.transactionsService.create(
+      dto,
+      voucher,
+    );
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Obtener transacciones',
+    summary:
+      'Obtener transacciones',
     description:
       'Retorna todas las transacciones o permite filtrar por inversionista.',
   })
@@ -116,6 +178,8 @@ export class TransactionsController {
     userId: Investor,
   ) {
     return this.transactionsService
-      .findPendingInvestments(userId);
+      .findPendingInvestments(
+        userId,
+      );
   }
 }

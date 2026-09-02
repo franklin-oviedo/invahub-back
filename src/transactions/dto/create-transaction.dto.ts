@@ -10,6 +10,7 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 import { Investor } from '../enum/investor.enum';
 import { TransactionType } from '../enum/transaction-type.enum';
@@ -32,6 +33,7 @@ export class CreateTransactionDto {
   @ApiProperty({
     example: 35000,
   })
+  @Type(() => Number)
   @IsNumber()
   @IsPositive()
   amount!: number;
@@ -47,7 +49,15 @@ export class CreateTransactionDto {
   @ApiPropertyOptional({
     example: 'Movimiento de septiembre',
   })
-  @IsOptional()
   @IsString()
-  description?: string;
+  description!: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description:
+      'Comprobante de la transacción',
+  })
+  @IsOptional()
+  voucher!: any;
 }
