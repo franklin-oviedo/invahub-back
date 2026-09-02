@@ -5,7 +5,6 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -24,14 +23,15 @@ import { TransactionsService } from './transactions.service';
 @Controller('transactions')
 export class TransactionsController {
   constructor(
-    private readonly transactionsService: TransactionsService,
+    private readonly transactionsService:
+      TransactionsService,
   ) {}
 
   @Post()
   @ApiOperation({
     summary: 'Registrar una transacción',
     description:
-      'Registra una inversión o retorno. El backend calcula automáticamente el capital y la ganancia.',
+      'Registra una inversión o retorno. En los retornos, el backend calcula automáticamente capital, ganancia y saldo pendiente de la inversión seleccionada.',
   })
   @ApiCreatedResponse({
     description:
@@ -39,7 +39,7 @@ export class TransactionsController {
   })
   @ApiBadRequestResponse({
     description:
-      'Datos de la transacción inválidos',
+      'Datos inválidos, inversión no seleccionada o inversión ya saldada',
   })
   @ApiInternalServerErrorResponse({
     description:
@@ -83,5 +83,39 @@ export class TransactionsController {
     return this.transactionsService.findAll(
       userId,
     );
+  }
+
+  @Get('investments/pending')
+  @ApiOperation({
+    summary:
+      'Obtener inversiones pendientes',
+    description:
+      'Retorna las inversiones que todavía tienen capital pendiente para un inversionista.',
+  })
+  @ApiQuery({
+    name: 'user_id',
+    required: true,
+    enum: Investor,
+    description:
+      'Identificador del inversionista',
+  })
+  @ApiOkResponse({
+    description:
+      'Listado de inversiones pendientes obtenido correctamente',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Inversionista inválido o no especificado',
+  })
+  @ApiInternalServerErrorResponse({
+    description:
+      'Error consultando las inversiones pendientes',
+  })
+  findPendingInvestments(
+    @Query('user_id')
+    userId: Investor,
+  ) {
+    return this.transactionsService
+      .findPendingInvestments(userId);
   }
 }
